@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
-import User from "../models/user";
+import User from "../models/user.js";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const signUpSchema = z.object({
     first_name: z.string().min(1, "Tên không hợp lệ"),
@@ -85,7 +88,7 @@ export const signin = async (req, res) => {
             return res.status(400).json({ message: "Mật khẩu không chính xác" });
         }
 
-        const token = jwt.sign({ id: user._id }, "123456", { expiresIn: "30m" });
+        const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, { expiresIn: "30m" });
 
         user.password = undefined;
         return res.status(200).json({

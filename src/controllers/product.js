@@ -106,7 +106,6 @@ export const createProduct = async (req, res) => {
     });
 };
 
-// Các hàm khác giữ nguyên
 export const getProducts = async (req, res) => {
     try {
         const { _limit = 10, _page = 1, _sort = "price", _order = "asc", baseColor, categoryId } = req.query;

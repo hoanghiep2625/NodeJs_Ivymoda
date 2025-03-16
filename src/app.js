@@ -1,3 +1,4 @@
+import ngrok from "@ngrok/ngrok";
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -9,8 +10,7 @@ import categoryRouter from "./routers/categories.js";
 dotenv.config();
 
 const app = express();
-
-app.use(cors({ origin: "http://127.0.0.1:5501" }));
+app.use(cors());
 app.use(express.json());
 
 const connectDB = async () => {
@@ -19,9 +19,9 @@ const connectDB = async () => {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
-        console.log("✅ Kết nối MongoDB thành công!");
+        console.log("🔗 Connected to MongoDB");
     } catch (error) {
-        console.error("❌ Lỗi kết nối MongoDB:", error);
+        console.error("❌ MongoDB Connection Error:", error);
         process.exit(1);
     }
 };
@@ -32,4 +32,14 @@ app.use("/api/products", productRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/categories", categoryRouter);
 
-export const viteNodeApp = app;
+const PORT = 2625;
+app.listen(PORT, async () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+
+    const listener = await ngrok.connect({
+        addr: PORT,
+        authtoken: process.env.NGROK_AUTHTOKEN,
+    });
+
+    console.log(`🌍 Ngrok URL: ${listener.url()}`);
+});

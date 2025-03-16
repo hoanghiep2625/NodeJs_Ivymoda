@@ -5,8 +5,8 @@ import {
     getProducts,
     deleteProduct,
     updateProduct,
-} from "../controllers/product";
-import { checkAuth } from "../middlewares/checkAuth";
+} from "../controllers/product.js";
+import { checkAuth } from "../middlewares/checkAuth.js";
 
 const router = Router();
 

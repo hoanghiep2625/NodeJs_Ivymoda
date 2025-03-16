@@ -1,5 +1,9 @@
 import jwt from "jsonwebtoken";
-import User from "../models/user";
+import User from "../models/user.js";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 export const checkAuth = async (req, res, next) => {
     const token = req.header("Authorization")?.replace("Bearer ", "");
     if (!token) {
@@ -9,23 +13,26 @@ export const checkAuth = async (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.decode(token, "123456");
-        if (!decoded) {
-            return res.status(401).json({
-                message: "Token không hợp lệ",
+        const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        const user = await User.findById(decoded.id).select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Người dùng không tồn tại",
             });
         }
-        const user = await User.findById(decoded.id).select("-password");
-        console.log(user);
+
         if (user.role !== 3) {
-            return res.status(401).json({
+            return res.status(403).json({
                 message: "Bạn không có quyền truy cập",
             });
         }
+
+        req.user = user;
         next();
     } catch (error) {
         return res.status(401).json({
-            message: error.message,
+            message: "Token không hợp lệ hoặc đã hết hạn",
         });
     }
 };
