@@ -15,6 +15,9 @@ app.use(express.json());
 
 const connectDB = async () => {
     try {
+        if (!process.env.MONGO_URI) {
+            throw new Error("MONGO_URI is not defined!");
+        }
         await mongoose.connect(process.env.MONGO_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
@@ -26,20 +29,26 @@ const connectDB = async () => {
     }
 };
 
+
 connectDB();
 
 app.use("/api/products", productRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/categories", categoryRouter);
 
-const PORT = 2625;
-app.listen(PORT, async () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+// const PORT = 2625;
+// app.listen(PORT, async () => {
+//     console.log(`🚀 Server running at http://localhost:${PORT}`);
 
-    const listener = await ngrok.connect({
-        addr: PORT,
-        authtoken: process.env.NGROK_AUTHTOKEN,
-    });
+//     const listener = await ngrok.connect({
+//         addr: PORT,
+//         authtoken: process.env.NGROK_AUTHTOKEN,
+//     });
 
-    console.log(`🌍 Ngrok URL: ${listener.url()}`);
+//     console.log(`🌍 Ngrok URL: ${listener.url()}`);
+// });
+
+const PORT = process.env.PORT || 2625;
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
 });

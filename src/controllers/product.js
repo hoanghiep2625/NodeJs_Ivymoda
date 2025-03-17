@@ -7,17 +7,17 @@ import cloudinary from "../config/cloudinary.js";
 // Schema Zod với transform
 const productSchema = z.object({
     name: z.string().min(2, "Tên sản phẩm cần tối thiểu 2 ký tự"),
-    price: z.string().transform(val => parseFloat(val)).refine(val => val >= 0, { // Chuyển chuỗi thành số
+    price: z.string().transform(val => parseFloat(val)).refine(val => val >= 0, {
         message: "Giá phải lớn hơn hoặc bằng 0",
     }),
     categoryId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
         message: "categoryId phải là ObjectId hợp lệ",
     }),
-    categoryAncestors: z.string().transform(val => JSON.parse(val)).optional().refine( // Chuyển chuỗi JSON thành mảng
+    categoryAncestors: z.string().transform(val => JSON.parse(val)).optional().refine(
         val => Array.isArray(val) ? val.every(id => mongoose.Types.ObjectId.isValid(id)) : true,
         { message: "Mỗi ID trong categoryAncestors phải là ObjectId hợp lệ" }
     ),
-    colors: z.string().transform(val => JSON.parse(val)).refine( // Chuyển chuỗi JSON thành mảng
+    colors: z.string().transform(val => JSON.parse(val)).refine(
         val => Array.isArray(val) && val.length > 0 && val.every(color =>
             typeof color.baseColor === "string" && color.baseColor.length > 0 &&
             typeof color.actualColor === "string" && color.actualColor.length > 0 &&
@@ -27,7 +27,7 @@ const productSchema = z.object({
     ),
     shortDescription: z.string().optional(),
     description: z.string().optional(),
-    sizes: z.string().transform(val => JSON.parse(val)).refine( // Chuyển chuỗi JSON thành mảng
+    sizes: z.string().transform(val => JSON.parse(val)).refine(
         val => Array.isArray(val) && val.length > 0 && val.every(size =>
             ["S", "M", "L", "XL", "XXL"].includes(size.size) &&
             typeof size.stock === "number" && Number.isInteger(size.stock) && size.stock >= 0
