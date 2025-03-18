@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const signUpSchema = z.object({
+const registerSchema = z.object({
     first_name: z.string().min(1, "Tên không hợp lệ"),
     name: z.string().min(2, "Tên cần tối thiểu 2 ký tự"),
     email: z.string().email("Sai định dạng email"),
@@ -26,14 +26,14 @@ const signUpSchema = z.object({
     path: ["confirmPassword"],
 });
 
-const signInSchema = z.object({
+const LoginSchema = z.object({
     email: z.string().email("Sai định dạng email"),
     password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
 });
 
-export const signup = async (req, res) => {
+export const register = async (req, res) => {
     try {
-        const result = signUpSchema.safeParse(req.body);
+        const result = registerSchema.safeParse(req.body);
 
         if (!result.success) {
             return res.status(400).json({ errors: result.error.errors.map(err => err.message) });
@@ -68,9 +68,9 @@ export const signup = async (req, res) => {
     }
 };
 
-export const signin = async (req, res) => {
+export const login = async (req, res) => {
     try {
-        const result = signInSchema.safeParse(req.body);
+        const result = LoginSchema.safeParse(req.body);
 
         if (!result.success) {
             return res.status(400).json({ errors: result.error.errors.map(err => err.message) });

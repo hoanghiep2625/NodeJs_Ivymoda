@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-const signUpSchema = new Schema(
+const registerSchema = new Schema(
     {
         first_name: {
             type: String,
@@ -61,4 +61,4 @@ const signUpSchema = new Schema(
     }
 );
 
-export default mongoose.model("user", signUpSchema);
+export default mongoose.model("user", registerSchema);
