@@ -12,7 +12,7 @@ const registerSchema = z.object({
     email: z.string().email("Sai định dạng email"),
     phone: z.string().regex(/^(0|\+84)(3[2-9]|5[2689]|7[06-9]|8[1-689]|9[0-46-9])\d{7}$/, "Sai định dạng số điện thoại Việt Nam"),
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Ngày sinh phải đúng định dạng YYYY-MM-DD" }),
-    sex: z.number().min(0).max(1),
+    sex: z.string().min(0).max(1),
     city: z.string().min(1, "Cần chọn thành phố"),
     district: z.string().min(1, "Cần chọn quận/huyện"),
     commune: z.string().min(1, "Cần chọn phường xã"),
@@ -29,12 +29,12 @@ const loginSchema = z.object({
     password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
 });
 
-const generateAccessToken = (userId, email) => {
-    return jwt.sign({ id: userId, email: email }, process.env.SECRET_KEY, { expiresIn: "5m" });
+const generateAccessToken = (userId, email, role) => {
+    return jwt.sign({ id: userId, email: email, role: role }, process.env.SECRET_KEY, { expiresIn: "1d" });
 };
 
-const generateRefreshToken = (userId, email) => {
-    return jwt.sign({ id: userId, email: email }, process.env.SECRET_KEY, { expiresIn: "30d" });
+const generateRefreshToken = (userId, email, role) => {
+    return jwt.sign({ id: userId, email: email, role: role }, process.env.SECRET_KEY, { expiresIn: "30d" });
 };
 
 export const register = async (req, res) => {
@@ -55,7 +55,7 @@ export const register = async (req, res) => {
             ...value,
             email: value.email.toLowerCase(),
             password: hashedPassword,
-            role: 1,
+            role: "1",
         });
 
         return res.status(201).json({ message: "Đăng ký thành công" });
@@ -83,8 +83,8 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Mật khẩu không chính xác" });
         }
 
-        const token = generateAccessToken(user._id, user.email);
-        const refreshToken = generateRefreshToken(user._id, user.email);
+        const token = generateAccessToken(user._id, user.email, user.role);
+        const refreshToken = generateRefreshToken(user._id, user.email, user.role);
         const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
         await User.findByIdAndUpdate(user._id, { refreshToken: hashedRefreshToken });

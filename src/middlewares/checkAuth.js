@@ -21,9 +21,12 @@ export const checkAuth = async (req, res, next) => {
                 message: "Người dùng không tồn tại",
             });
         }
+
+
         req.user = {
             id: user._id,
             email: user.email,
+            role: user.role 
         };
         next();
     } catch (error) {

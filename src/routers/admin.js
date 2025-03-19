@@ -17,6 +17,8 @@ const router = Router();
 
 router.use(checkAuthAdmin);
 
+
+
 router.post("/products", createProduct);
 router.delete("/products/:id", deleteProduct);
 router.put("/products/:id", updateProduct);

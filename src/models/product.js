@@ -5,6 +5,7 @@ const productSchema = new mongoose.Schema(
     {
         name: { type: String, required: true, index: true },
         price: { type: Number, required: true, index: true },
+        sku: { type: String, required: true, index: true },
         categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true, index: true },
         categoryAncestors: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category", index: true }],
         colors: [

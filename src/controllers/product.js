@@ -10,6 +10,7 @@ const productSchema = z.object({
     price: z.string().transform(val => parseFloat(val)).refine(val => val >= 0, {
         message: "Giá phải lớn hơn hoặc bằng 0",
     }),
+    sku: z.string(),
     categoryId: z.string().refine((val) => mongoose.Types.ObjectId.isValid(val), {
         message: "categoryId phải là ObjectId hợp lệ",
     }),
@@ -60,17 +61,12 @@ export const createProduct = async (req, res) => {
         if (err) {
             return res.status(400).json({ message: err.message });
         }
-
         try {
-            console.log("req.body:", req.body);
-            console.log("req.files:", req.files);
-
             const result = productSchema.safeParse(req.body);
             if (!result.success) {
                 const errors = result.error.errors.map(err => err.message);
                 return res.status(400).json({ errors });
             }
-
             const mainImage = req.files["mainImage"]
                 ? await uploadImageToCloudinary(req.files["mainImage"][0])
                 : null;

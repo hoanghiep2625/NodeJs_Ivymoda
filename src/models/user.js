@@ -24,8 +24,8 @@ const registerSchema = new Schema(
             type: String,
         },
         sex: {
-            type: Number, // 0: Nữ, 1: Nam
-            enum: [0, 1],
+            type: String, // 0: Nữ, 1: Nam
+            enum: ["0", "1"],
             required: true,
         },
         city: {
@@ -45,9 +45,9 @@ const registerSchema = new Schema(
             required: true,
         },
         role: {
-            type: Number,
-            enum: [1, 3],
-            default: 1,
+            type: String,
+            enum: ["1", "3"],
+            default: "1",
         },
         verify: {
             type: Number,

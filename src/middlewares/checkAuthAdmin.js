@@ -22,12 +22,11 @@ export const checkAuthAdmin = async (req, res, next) => {
             });
         }
 
-        if (user.role !== 3) {
+        if (user.role !== "3") {
             return res.status(403).json({
                 message: "Bạn không có quyền truy cập",
             });
         }
-        // console.log(token);
         req.user = user;
         next();
     } catch (error) {
