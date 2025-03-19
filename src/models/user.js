@@ -54,6 +54,7 @@ const registerSchema = new Schema(
             enum: [0, 1],
             default: 0,
         },
+        refreshToken: { type: String, default: "" }
     },
     {
         timestamps: true,

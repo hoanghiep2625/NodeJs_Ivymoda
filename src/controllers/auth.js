@@ -11,9 +11,7 @@ const registerSchema = z.object({
     name: z.string().min(2, "Tên cần tối thiểu 2 ký tự"),
     email: z.string().email("Sai định dạng email"),
     phone: z.string().regex(/^(0|\+84)(3[2-9]|5[2689]|7[06-9]|8[1-689]|9[0-46-9])\d{7}$/, "Sai định dạng số điện thoại Việt Nam"),
-    date: z.string().refine((val) => !isNaN(Date.parse(val)), {
-        message: "Ngày sinh phải đúng định dạng YYYY-MM-DD",
-    }),
+    date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Ngày sinh phải đúng định dạng YYYY-MM-DD" }),
     sex: z.number().min(0).max(1),
     city: z.string().min(1, "Cần chọn thành phố"),
     district: z.string().min(1, "Cần chọn quận/huyện"),
@@ -26,28 +24,35 @@ const registerSchema = z.object({
     path: ["confirmPassword"],
 });
 
-const LoginSchema = z.object({
+const loginSchema = z.object({
     email: z.string().email("Sai định dạng email"),
     password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
 });
 
+// Tạo access token
+const generateAccessToken = (userId) => {
+    return jwt.sign({ id: userId }, process.env.SECRET_KEY, { expiresIn: "20s" });
+};
+
+// Tạo refresh token
+const generateRefreshToken = (userId) => {
+    return jwt.sign({ id: userId }, process.env.SECRET_KEY, { expiresIn: "30d" });
+};
+
 export const register = async (req, res) => {
     try {
         const result = registerSchema.safeParse(req.body);
-
         if (!result.success) {
-            return res.status(400).json({ errors: result.error.errors.map(err => err.message) });
+            return res.status(400).json({ errors: result.error.format() });
         }
 
         const value = result.data;
-
         const existUser = await User.findOne({ email: value.email.toLowerCase() });
         if (existUser) {
             return res.status(400).json({ message: "Tài khoản đã tồn tại" });
         }
 
         const hashedPassword = await bcrypt.hash(value.password, 10);
-
         const newUser = await User.create({
             ...value,
             email: value.email.toLowerCase(),
@@ -55,14 +60,7 @@ export const register = async (req, res) => {
             role: 1,
         });
 
-        const userResponse = newUser.toObject();
-        delete userResponse.password;
-
-        return res.status(201).json({
-            message: "Đăng ký thành công",
-            user: userResponse
-        });
-
+        return res.status(201).json({ message: "Đăng ký thành công" });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
@@ -70,10 +68,9 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        const result = LoginSchema.safeParse(req.body);
-
+        const result = loginSchema.safeParse(req.body);
         if (!result.success) {
-            return res.status(400).json({ errors: result.error.errors.map(err => err.message) });
+            return res.status(400).json({ errors: result.error.format() });
         }
 
         const { email, password } = result.data;
@@ -88,14 +85,83 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Mật khẩu không chính xác" });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY, { expiresIn: "30m" });
+        const token = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-        user.password = undefined;
+        await User.findByIdAndUpdate(user._id, { refreshToken: hashedRefreshToken });
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            path: "/api/auth/refresh",
+        });
+
         return res.status(200).json({
             message: "Đăng nhập thành công",
-            user,
-            token,
+            user: { id: user._id, email: user.email, name: user.name, token },
         });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+export const requestRefreshToken = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+        return res.status(401).json({ message: "No refresh token" });
+    }
+
+    try {
+        const userData = jwt.verify(refreshToken, process.env.SECRET_KEY);
+        const user = await User.findById(userData.id);
+
+        if (!user || !user.refreshToken) {
+            return res.status(403).json({ message: "Invalid refresh token" });
+        }
+
+        const isValid = await bcrypt.compare(refreshToken, user.refreshToken);
+        if (!isValid) {
+            return res.status(403).json({ message: "Invalid refresh token" });
+        }
+
+        const newToken = generateAccessToken(user._id);
+        const newRefreshToken = generateRefreshToken(user._id);
+        const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+
+        await User.findByIdAndUpdate(user._id, { refreshToken: hashedNewRefreshToken });
+
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict",
+            path: "/api/auth/refresh",
+        });
+
+        res.status(200).json({ token: newToken });
+    } catch (error) {
+        return res.status(403).json({ message: "Invalid refresh token" });
+    }
+};
+
+export const logout = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) return res.status(200).json({ message: "Đã đăng xuất" });
+
+        const userData = jwt.verify(refreshToken, process.env.SECRET_KEY);
+        await User.findByIdAndUpdate(userData.id, { refreshToken: null });
+
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict",
+            path: "/api/auth/refresh",
+        });
+
+        return res.status(200).json({ message: "Đăng xuất thành công" });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }

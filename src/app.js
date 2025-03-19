@@ -6,11 +6,18 @@ import dotenv from "dotenv";
 import productRouter from "./routers/product.js";
 import authRouter from "./routers/auth.js";
 import categoryRouter from "./routers/categories.js";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(
+    cors({
+        origin: ["http://localhost:5173", "https://https://reactjs-ivymoda.fly.dev"],
+        credentials: true, // Cho phép gửi cookie
+    })
+);
+app.use(cookieParser());
 app.use(express.json());
 
 const connectDB = async () => {
