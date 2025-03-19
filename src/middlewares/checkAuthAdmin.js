@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const checkAuth = async (req, res, next) => {
+export const checkAuthAdmin = async (req, res, next) => {
     const token = req.header("Authorization")?.replace("Bearer ", "");
     if (!token) {
         return res.status(401).json({
@@ -21,10 +21,14 @@ export const checkAuth = async (req, res, next) => {
                 message: "Người dùng không tồn tại",
             });
         }
-        req.user = {
-            id: user._id,
-            email: user.email,
-        };
+
+        if (user.role !== 3) {
+            return res.status(403).json({
+                message: "Bạn không có quyền truy cập",
+            });
+        }
+        // console.log(token);
+        req.user = user;
         next();
     } catch (error) {
         return res.status(401).json({

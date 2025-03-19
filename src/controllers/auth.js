@@ -29,14 +29,12 @@ const loginSchema = z.object({
     password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
 });
 
-// Tạo access token
-const generateAccessToken = (userId) => {
-    return jwt.sign({ id: userId }, process.env.SECRET_KEY, { expiresIn: "20s" });
+const generateAccessToken = (userId, email) => {
+    return jwt.sign({ id: userId, email: email }, process.env.SECRET_KEY, { expiresIn: "5m" });
 };
 
-// Tạo refresh token
-const generateRefreshToken = (userId) => {
-    return jwt.sign({ id: userId }, process.env.SECRET_KEY, { expiresIn: "30d" });
+const generateRefreshToken = (userId, email) => {
+    return jwt.sign({ id: userId, email: email }, process.env.SECRET_KEY, { expiresIn: "30d" });
 };
 
 export const register = async (req, res) => {
@@ -85,19 +83,19 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Mật khẩu không chính xác" });
         }
 
-        const token = generateAccessToken(user._id);
-        const refreshToken = generateRefreshToken(user._id);
+        const token = generateAccessToken(user._id, user.email);
+        const refreshToken = generateRefreshToken(user._id, user.email);
         const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
         await User.findByIdAndUpdate(user._id, { refreshToken: hashedRefreshToken });
 
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             sameSite: "strict",
             path: "/api/auth/refresh",
         });
-
+        console.log(user);
         return res.status(200).json({
             message: "Đăng nhập thành công",
             user: { id: user._id, email: user.email, name: user.name, token },
@@ -165,4 +163,7 @@ export const logout = async (req, res) => {
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
+};
+export const info = async (req, res) => {
+    return res.status(200).json(req.user);
 };

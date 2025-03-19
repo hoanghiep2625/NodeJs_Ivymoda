@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import productRouter from "./routers/product.js";
 import authRouter from "./routers/auth.js";
 import categoryRouter from "./routers/categories.js";
+import adminRouter from "./routers/admin.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -42,6 +43,8 @@ connectDB();
 app.use("/api/products", productRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/categories", categoryRouter);
+app.use("/api/admin", adminRouter);
+
 
 // const PORT = 2625;
 // app.listen(PORT, async () => {
